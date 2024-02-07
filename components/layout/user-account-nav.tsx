@@ -41,7 +41,7 @@ export function UserAccountNav({ user }: UserAccountNavProps) {
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/dashboard" className="flex items-center space-x-2.5">
+          <Link href="/portal" className="flex items-center space-x-2.5">
             <LayoutDashboard className="size-4" />
             <p className="text-sm">Dashboard</p>
           </Link>

@@ -15,3 +15,8 @@ export const fontHeading = localFont({
   src: "./CalSans-SemiBold.woff2",
   variable: "--font-heading",
 })
+
+export const fontLogo = localFont({
+  src: "./KronaOne-Regular.ttf",
+  variable: "--font-logo",
+})

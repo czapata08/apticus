@@ -1,57 +1,69 @@
 import Link from "next/link"
-
+import { Balancer } from "react-wrap-balancer"
 import { buttonVariants } from "@/components/ui/button"
-import { siteConfig } from "@/config/site"
+// import { siteConfig } from "@/config/site"
 import { cn, nFormatter } from "@/lib/utils"
-import { Icons } from "@/components/shared/icons"
-import { env } from "@/env.mjs"
+// import { Icons } from "@/components/shared/icons"
+// import { env } from "@/env.mjs"
+import Featuressection from "@/components/marketing/features-section"
+import CallToActionComponent from "@/components/marketing/cta-section"
 
 export default async function IndexPage() {
-  const { stargazers_count: stars } = await fetch(
-    "https://api.github.com/repos/mickasmt/next-saas-stripe-starter",
-    {
-      ...(env.GITHUB_OAUTH_TOKEN && {
-        headers: {
-          Authorization: `Bearer ${process.env.GITHUB_OAUTH_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      }),
-      // data will revalidate every hour
-      next: { revalidate: 3600 },
-    },
-  )
-    .then((res) => res.json())
-    .catch((e) => console.log(e));
-
+  
+  // <div
+  // // eslint-disable-next-line tailwindcss/no-contradicting-classname
+  // className="absolute inset-0 h-full w-full bg-white bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"
+  //         ></div>
 
   return (
     <>
-      <section className="space-y-6 pb-12 pt-16 lg:py-28">
+
+      <section className="space-y-6 pt-16 lg:pt-28">
+ 
         <div className="container flex max-w-[64rem] flex-col items-center gap-5 text-center">
-          <Link
+     
+          {/* <div
+  className="z-40 absolute inset-0 h-full w-full bg-[radial-gradient(#0F172A_1px,transparent_1px)] dark:bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px] [mask-image:radial-gradient(ellipse_20%_20%_at_20%_25%,#000_60%,transparent_100%)]"
+></div> */}
+          {/* <Link
             href="https://twitter.com/miickasmt/status/1719892161095745801"
             className={cn(buttonVariants({ variant: "outline", size: "sm" }), "animate-fade-up opacity-0")}
             style={{ animationDelay: "0.15s", animationFillMode: "forwards" }}
             target="_blank"
           >
             Introducing on <Icons.twitter className="ml-2 size-4" />
-          </Link>
+          </Link> */}
 
-          <h1
-            className="animate-fade-up text-balance font-urban text-4xl font-extrabold tracking-tight opacity-0 sm:text-5xl md:text-6xl lg:text-7xl"
+<h1
+            className="animate-fade-up font-urban text-4xl font-extrabold tracking-tight opacity-0 sm:text-5xl md:text-6xl lg:text-7xl"
             style={{ animationDelay: "0.25s", animationFillMode: "forwards" }}
           >
-            Kick off with a bang with{" "}
-            <span className="text-gradient_indigo-purple font-extrabold">
-              SaaS Starter
-            </span>
+            <Balancer>
+              Streamline Operations With{" "}
+              <span className="relative bg-gradient-to-r from-indigo-500 to-purple-500/80 bg-clip-text font-extrabold text-transparent">
+                Apticus
+              </span>
+            </Balancer>
           </h1>
 
+          
+
+          {/* V1 - Sub-title */}
+          {/* <p
+            className="max-w-[70rem] animate-fade-up text-balance leading-normal text-muted-foreground opacity-0 sm:text-xl sm:leading-8"
+            style={{ animationDelay: "0.35s", animationFillMode: "forwards" }}
+          > */}
+            {/* Unlock the Full Potential of Your Business with Apticus, a suite of optimized, simple and secured operations management tools. Including payment portals, customer management, inventory management, and more. */}
+            {/* Elevate your business efficiency with Apticus. Discover a comprehensive suite of tools designed to optimize operations management, including advanced payment portals, customer management systems, and dynamic inventory tracking. Experience seamless integration and enhanced security, tailored for your business growth.
+          </p> */}
+
           <p
-            className="max-w-[42rem] animate-fade-up text-balance leading-normal text-muted-foreground opacity-0 sm:text-xl sm:leading-8"
+            className="max-w-[42rem] animate-fade-up leading-normal text-muted-foreground opacity-0 sm:text-xl sm:leading-8"
             style={{ animationDelay: "0.35s", animationFillMode: "forwards" }}
           >
-            Build your next project using Next.js 14, Prisma, Planetscale, Auth.js, Resend, React Email, Shadcn/ui, Stripe.
+            <Balancer>
+              Modern, powerful, affordable operation management platform designed for security, simplicity and scalability.
+            </Balancer>
           </p>
 
           <div
@@ -61,23 +73,23 @@ export default async function IndexPage() {
             <Link href="/pricing" className={cn(buttonVariants({ size: "lg" }))}>
               Go Pricing
             </Link>
-            <Link
-              href={siteConfig.links.github}
-              target="_blank"
-              rel="noreferrer"
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "px-4")}
-            >
-              <Icons.gitHub className="mr-2 size-4" />
-              <p>
-                <span className="hidden sm:inline-block">Star on</span>{" "}GitHub{" "}
-                <span className="font-semibold">{nFormatter(stars)}</span>
-              </p>
-            </Link>
+            <Link href="/#features" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>Explore Features</Link>
           </div>
         </div>
+        {/* <div
+  className="z-40 absolute inset-0 h-full w-full bg-[radial-gradient(#0F172A_1px,transparent_1px)] dark:bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px] [mask-image:radial-gradient(ellipse_20%_20%_at_85%_65%,#000_60%,transparent_100%)]"
+></div> */}
+      </section>
+
+      <section>
+<Featuressection/>
+      </section>
+      <section>
+<CallToActionComponent/>
       </section>
 
       <section
+        id="features"
         className="animate-fade-up py-16 text-zinc-500 opacity-0 dark:text-zinc-400"
         style={{ animationDelay: "0.55s", animationFillMode: "forwards" }}
       >

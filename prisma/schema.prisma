@@ -2,15 +2,17 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
-  relationMode = "prisma"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "auth"]
 }
 
+// use case: user authentication - authjs library
 model Account {
   id                String   @id @default(cuid())
   userId            String
@@ -32,8 +34,21 @@ model Account {
   @@unique([provider, providerAccountId])
   @@index([userId])
   @@map(name: "accounts")
+  @@schema("public")
 }
 
+//use case: session tokens 
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map(name: "verification_tokens")
+  @@schema("public")
+}
+
+// use case: auth session management
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
@@ -43,33 +58,348 @@ model Session {
 
   @@index([userId])
   @@map(name: "sessions")
+  @@schema("public")
 }
 
+// use case: user account management
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
-  emailVerified DateTime?
+  emailVerified DateTime? @map(name: "email_verified")
   image         String?
-  createdAt     DateTime  @default(now()) @map(name: "created_at")
-  updatedAt     DateTime  @default(now()) @map(name: "updated_at")
 
-  accounts Account[]
-  sessions Session[]
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @default(now()) @map(name: "updated_at")
 
+  accounts      Account[]
+  sessions      Session[]
+  notifications UserNotifications[]
+  invite        TeamMemberInvite[]
+
+  //  relation: user can be part of many workspaces - one to many
+  workspaces WorkspaceTeamMember[]
+
+  // stripe payments
   stripeCustomerId       String?   @unique @map(name: "stripe_customer_id")
   stripeSubscriptionId   String?   @unique @map(name: "stripe_subscription_id")
   stripePriceId          String?   @map(name: "stripe_price_id")
   stripeCurrentPeriodEnd DateTime? @map(name: "stripe_current_period_end")
 
   @@map(name: "users")
+  @@schema("public")
 }
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
+// use case: plans
+enum WorkspacePlans {
+  TRIAL
+  BASE_PLAN
+  PRO
+  ENTERPRISE
+  INVENTORY
+  RESTAURANT
 
-  @@unique([identifier, token])
-  @@map(name: "verification_tokens")
+  @@map(name: "workspace_plans")
+  @@schema("public")
 }
+
+//use case: workspace tenant root table
+//a workspace can only have one user who can delete data - admin user
+//a workspace can have many users who can only read and insert data
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @default(now()) @map(name: "updated_at")
+
+  // Workspace information
+  address         String @map(name: "address")
+  city            String @map(name: "city")
+  state           String @map(name: "state")
+  zip             String @map(name: "zip")
+  country         String @map(name: "country")
+  primary_contact String @map(name: "primary_contact") //create table for this later to separate concerns
+
+  // Plan information
+  teamMembersQuota     Int?            @default(5) @map(name: "team_members_quota")
+  tablesQuota          Int?            @default(5) @map(name: "tables_quota")
+  plan                 WorkspacePlans? @default(BASE_PLAN)
+  stripeSubscriptionId String?         @unique @map(name: "stripe_subscription_id")
+
+  // use case: Who are the users in this workspace
+  //relation: one to many - workspace can have many team members
+  workspaceTeamMembers WorkspaceTeamMember[]
+
+  //  use case: all roles within this workspace
+  workspaceRoles  WorkspaceRoles[]
+  workspacetables WorkspaceTables[]
+
+  // use case: track team member invites
+  teamMemberInvites TeamMemberInvite[]
+
+  //use case: workspace notifications management table
+  memberNotifications UserNotifications[]
+
+  @@index([name]) //index for faster search by name
+  @@map(name: "workspaces")
+  @@schema("public")
+}
+
+//use case: user workspace related information
+//a workspace can only have one admin user who can delete data
+//a workspace can have many users who can only read and insert data
+model WorkspaceTeamMember {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @default(now()) @map(name: "updated_at")
+  createdBy String   @map(name: "created_by")
+
+  //relation: many to one - a workspace can have many team members
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String    @map(name: "workspace_id")
+
+  //relation: many to one - a user can be part of many workspaces
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @map(name: "user_id")
+
+  //relation: team member can have many roles
+  roles            RoleToUser?
+  isWorkspaceAdmin Boolean     @default(false) @map(name: "is_workspace_admin")
+
+  @@index([workspaceId, userId]) //index for better query performance in searching for team members
+  @@schema("public")
+  @@map(name: "ws_team_members")
+}
+
+// -------------- RBAC SCHEMA -----------------
+
+enum RolesNames {
+  ADMIN //can delete data
+  TEAM_ADMIN //can insert, update and read high level data
+  TEAM_BASE //can read only
+
+  @@map(name: "roles_names")
+  @@schema("public")
+}
+
+// use case: workspace roles
+//relation: workspace can have many roles - one to many
+//relation: a role can have many permissions - one to many
+model WorkspaceRoles {
+  id        String     @id @default(cuid())
+  name      RolesNames @default(TEAM_BASE) @map(name: "name")
+  createdAt DateTime   @default(now()) @map(name: "created_at")
+  updatedAt DateTime   @default(now()) @map(name: "updated_at")
+
+  //relation: many to one - a workspace can have many roles
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String    @map(name: "workspace_id")
+
+  permissions RolesPermissions[]
+
+  @@index([workspaceId]) // Index for quick query of roles within a workspace
+  @@map(name: "workspace_roles")
+  @@schema("public")
+}
+
+//this table will have as many rows as the number of tables in a workspace
+//use case: permissions allowed for each role per table in a workspace
+model RolesPermissions {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @default(now()) @map(name: "updated_at")
+
+  role             WorkspaceRoles @relation(fields: [roleId], references: [id])
+  roleId           String         @map(name: "role_id")
+  isWorkspaceAdmin Boolean        @default(false) @map(name: "is_workspace_admin")
+
+  tableName String            @map(name: "table_name") //table  //role 
+  actions   DatabaseActions[] @map(name: "actions") //actions can only be read, insert, update, delete
+
+  @@map(name: "roles_permissions")
+  @@schema("public")
+}
+
+//use case: role to user mapping
+//use case: provide an id to easily assign and remove roles to users
+model RoleToUser {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now()) @map(name: "created_at")
+  updatedAt  DateTime @default(now()) @map(name: "updated_at")
+  assignedBy String
+
+  user   WorkspaceTeamMember @relation(fields: [userId], references: [id])
+  userId String              @map(name: "user_id")
+  roleId String              @map(name: "role_id")
+
+  @@unique([userId])
+  @@map(name: "roles_to_permissions")
+  @@schema("public")
+}
+
+enum DatabaseActions {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+
+  @@map(name: "database_actions")
+  @@schema("public")
+}
+
+// ----------------- END RBAC SCHEMA -----------------
+
+// ----------------- MONITORING AND LOGGING TABLE -----------------
+//use case: internal audit logs for database operations and user action tracking
+model WorkspaceLogs {
+  id          String   @id @default(cuid())
+  workspaceId String   @map(name: "workspace_id")
+  userId      String   @map(name: "user_id")
+  log         String
+  createdAt   DateTime @default(now()) @map(name: "created_at")
+  updatedAt   DateTime @default(now()) @map(name: "updated_at")
+
+  @@index([workspaceId, userId])
+  @@map(name: "workspace_logs")
+  @@schema("public")
+}
+
+model WorkspaceTables {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String    @map(name: "workspace_id")
+  tableName   String    @map(name: "table_name")
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @default(now()) @map(name: "updated_at")
+  createdBy String   @map(name: "created_by")
+
+  @@unique([workspaceId, tableName])
+  @@index([workspaceId, tableName])
+  @@map("workspace_tables")
+  @@schema("public")
+}
+
+// ----------------- END MONITORING AND LOGGING TABLE -----------------
+
+//use case: admin account can create a new user and invite them to workspace
+//constraints: if workspaceTeamQuota is not exceeded or will no be exceeded after adding this user
+//doubt: should this be in a relation with the user table?
+model TeamMemberInvite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @default(now()) @map(name: "updated_at")
+  invitedBy String   @map(name: "invited_by")
+
+  email               String     @map(name: "email")
+  role                RolesNames @map(name: "role_Id")
+  emailConfirmed      Boolean    @default(false) @map(name: "email_confirmed")
+  onBoardingCompleted Boolean    @default(false) @map(name: "on_boarding_completed")
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String    @map(name: "workspace_id")
+
+  user   User?  @relation(fields: [userId], references: [id])
+  userId String @map(name: "user_id")
+
+  @@unique([workspaceId, userId])
+  @@map(name: "ws_team_invites")
+  @@schema("public")
+}
+
+//use case: user notifications management table
+//should use User table to get user information via relation
+//todo: create a table define the type of notifications and use case with a flexible schema
+model UserNotifications {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @default(now()) @map(name: "updated_at")
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String    @map(name: "workspace_id")
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @map(name: "user_id")
+
+  notificationsPreferences NotificationPreference[]
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId, userId])
+  @@map(name: "user_notifications")
+  @@schema("public")
+}
+
+//use case: user notification preferences
+model NotificationPreference {
+  id                 String            @id @default(cuid())
+  userNotification   UserNotifications @relation(fields: [userNotificationId], references: [id])
+  userNotificationId String
+
+  notificationType NotificationsTypes @map(name: "notification_type")
+  medium           NotificationMedium @default(EMAIL)
+  isSubscribed     Boolean            @default(true)
+
+  @@unique([userNotificationId, notificationType, medium])
+  @@map(name: "notifications_preferences")
+  @@schema("public")
+}
+
+enum NotificationsTypes {
+  INVENTORY_INPUT
+  INVENTORY_OUTPUT
+  INVENTORY_ADJUSTMENT
+  INVENTORY_LOW_STOCK
+  PENDING_INPUT
+  PENDING_OUTPUT
+  PENDING_ADJUSTMENT
+  PRICE_ADJUSTMENT
+  PAYMENT_PROCESSED
+  PAYMENT_FAILED
+  PAYMENT_REFUNDED
+  NEW_ORDER
+  ORDER_CANCELLED
+  NEW_EVENT_CREATED
+  NEW_PRODUCT_CREATED
+  NEW_CUSTOMER_CREATED
+
+  @@map(name: "notification_types")
+  @@schema("public")
+}
+
+enum NotificationMedium {
+  EMAIL
+  SMS
+  PUSH
+
+  @@map(name: "notification_medium")
+  @@schema("public")
+}
+
+enum NotificationStatus {
+  SENT
+  PENDING
+  FAILED
+
+  @@map(name: "notification_status")
+  @@schema("public")
+}
+
+//use case: has the all the tables for a specific workspace
+//only admin can read from this table
+//admin cannot insert or delete, only update
+//a trigger will be used to update this table when a new table is created
+//a trigger will be used to update this table when a table is deleted
+// model WorkspaceTables {
+
+// }
+
+//use case : workspace notifications management tables for each user
+//Each workspace has it set of notifications
+//Each user can set their own notification preferences base on their role and permissions
+//Label each action which can trigger a notification - does this need another table?
+
+// Relation to workspace admin
+// workspace can only have one admin
+// user can be admin of many workspaces
+// relation: one to many - user can be admin of many workspaces

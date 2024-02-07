@@ -1,6 +1,6 @@
 import "@/styles/globals.css";
 
-import { fontHeading, fontSans, fontUrban } from "@/assets/fonts";
+import { fontHeading, fontSans, fontUrban, fontLogo } from "@/assets/fonts";
 import { Analytics } from "@/components/analytics";
 import { ModalProvider } from "@/components/modal-provider";
 import { ThemeProvider } from "@/components/providers";
@@ -20,22 +20,21 @@ export const metadata = {
   },
   description: siteConfig.description,
   keywords: [
-    "Next.js",
-    "React",
-    "Prisma",
-    "PlanetScale",
-    "Auth.js",
-    "shadcn ui",
-    "Resend",
-    "React Email",
-    "Stripe"
+    "Operations Management Software", "Business Process Automation", "Workflow Optimization",
+    "Efficiency Tools", "Enterprise Resource Planning (ERP)", "Project Management Solutions",
+    "Data Analytics for Business", "Supply Chain Management", "Inventory Tracking Software",
+    "Task Management System", "Business Intelligence Tools", "Performance Management Software",
+    "Customer Relationship Management (CRM)", "Financial Management System",
+    "Human Resources Management System (HRMS)", "Content Management System (CMS)",
+    "Cloud-Based Business Solutions", "SME Business Tools", "Corporate Operations Software",
+    "Digital Transformation in Business",
   ],
   authors: [
     {
-      name: "mickasmt",
+      name: "Apticus Inc",
     },
   ],
-  creator: "mickasmt",
+  creator: "Carlos Zapata",
   metadataBase: new URL(siteConfig.url),
   openGraph: {
     type: "website",
@@ -50,11 +49,11 @@ export const metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     images: [siteConfig.ogImage],
-    creator: "@miickasmt",
+    creator: "@apticus",
   },
   icons: {
     icon: "/favicon.ico",
-    shortcut: "/favicon-16x16.png",
+    shortcut: "/icon-slate-600.png",
     apple: "/apple-touch-icon.png",
   },
   manifest: `${siteConfig.url}/site.webmanifest`,
@@ -70,7 +69,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
           "min-h-screen bg-background font-sans antialiased",
           fontSans.variable,
           fontUrban.variable,
-          fontHeading.variable
+          fontHeading.variable,
+          fontLogo.variable
         )}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>

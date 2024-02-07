@@ -1,4 +1,7 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
+import { SupabaseAdapter } from "@auth/supabase-adapter"
+
+
 import { NextAuthOptions } from "next-auth"
 import EmailProvider from "next-auth/providers/email"
 import GoogleProvider from "next-auth/providers/google"
@@ -39,7 +42,7 @@ export const authOptions: NextAuthOptions = {
 
         try {
           const result = await resend.emails.send({
-            from: 'SaaS Starter App <onboarding@resend.dev>',
+            from: 'Apticus <onboarding@resend.dev>',
             to: process.env.NODE_ENV === "development" ? 'delivered@resend.dev' : identifier,
             subject: authSubject,
             react: MagicLinkEmail({

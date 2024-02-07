@@ -30,7 +30,7 @@ export function NavBar({ user, items, children, rightElements, scroll = false }:
           : "bg-background/0"
           : "border-b"}`}
       >
-        <div className="container flex h-16 items-center justify-between py-4">
+        <div className="flex h-16 w-full items-center justify-between p-4">
           <MainNav items={items}>{children}</MainNav>
 
           <div className="flex items-center space-x-3">

@@ -3,10 +3,10 @@ import { env } from "@/env.mjs"
 
 export const pricingData: SubscriptionPlan[] = [
   {
-    title: 'Starter',
-    description: 'For Beginners',
+    title: 'Trial',
+    description: 'Try it for free',
     benefits: [
-      'Up to 100 monthly posts',
+      'Up to 100 posts',
       'Basic analytics and reporting',
       'Access to standard templates',
     ],
@@ -40,8 +40,8 @@ export const pricingData: SubscriptionPlan[] = [
       'Limited access to business resources.',
     ],
     prices: {
-      monthly: 15,
-      yearly: 144,
+      monthly: 208,
+      yearly: 2800,
     },
     stripeIds: {
       monthly: env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PLAN_ID,
@@ -60,8 +60,8 @@ export const pricingData: SubscriptionPlan[] = [
     ],
     limitations: [],
     prices: {
-      monthly: 30,
-      yearly: 300,
+      monthly: 308,
+      yearly: 3800,
     },
     stripeIds: {
       monthly: env.NEXT_PUBLIC_STRIPE_BUSINESS_MONTHLY_PLAN_ID,
